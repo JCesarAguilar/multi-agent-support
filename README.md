@@ -2,9 +2,9 @@
 
 Proyecto Integrador del **Módulo 3 — AI Engineering (Henry)**.
 
-Sistema de enrutamiento inteligente de consultas internas: un **agente orquestador** clasifica la intención de la consulta de un colaborador y la delega al **agente RAG especializado** del área correspondiente (Recursos Humanos, Mesa de Ayuda de TI o Finanzas), que responde usando únicamente la documentación interna de esa área y cita la fuente. Todo el flujo está implementado con **LangChain** y trazado de punta a punta con **Langfuse**.
+Sistema de enrutamiento inteligente de consultas internas: un **agente orquestador** clasifica la intención de la consulta de un colaborador y la delega al **agente RAG especializado** del área correspondiente (Recursos Humanos, Mesa de Ayuda de TI o Finanzas), que responde usando únicamente la documentación interna de esa área y cita la fuente. Como bonus, un **agente evaluador** (LLM-as-a-judge) califica cada respuesta del 1 al 10 y registra los puntajes en Langfuse. Todo el flujo está implementado con **LangChain** y trazado de punta a punta con **Langfuse**.
 
-**Resultado:** 17/17 consultas de prueba enrutadas correctamente (100%), incluidas consultas ambiguas, informales y fuera de alcance.
+**Resultados:** 17/17 consultas de prueba enrutadas correctamente (100%), incluidas consultas ambiguas, informales y fuera de alcance. Calidad promedio de las respuestas según el agente evaluador: **8.7 / 10**.
 
 ---
 
@@ -31,7 +31,10 @@ Consulta del usuario
         └─► out_of_scope    ── mensaje fijo, sin llamar a ningún agente
         │
         ▼
-  Respuesta con fuentes  ──►  Trace completo en Langfuse
+  Agente evaluador  ── califica la respuesta (1–10) en 3 dimensiones + nota global
+        │
+        ▼
+  Respuesta con fuentes y evaluación  ──►  Trace completo en Langfuse (con scores)
 ```
 
 **Flujo de cada consulta**
@@ -39,7 +42,8 @@ Consulta del usuario
 1. El **orquestador** clasifica la consulta y devuelve un objeto `RoutingDecision` (intent, confianza y justificación) validado con Pydantic.
 2. El **enrutamiento condicional** busca el agente correspondiente en un diccionario `intent -> agente`.
 3. El **agente RAG** recupera los 3 chunks más similares de **su propia colección** en Chroma, arma el contexto con la procedencia de cada chunk y genera la respuesta citando la sección usada.
-4. Cada paso queda registrado en **Langfuse** como parte de un único trace.
+4. El **agente evaluador** recibe la consulta y la respuesta, y devuelve un objeto `Evaluation` con tres puntajes (relevance, completeness, accuracy), una nota global (`quality`) y su justificación. Las consultas fuera de alcance no se evalúan, porque su respuesta es un mensaje fijo.
+5. Cada paso queda registrado en **Langfuse** como parte de un único trace, y los puntajes del evaluador se adjuntan al trace como **scores**.
 
 ---
 
@@ -67,10 +71,11 @@ multi-agent-support/
 │   └── finance_docs/         # 5 documentos .md — 55 chunks
 ├── prompts/
 │   ├── orchestrator_system.txt   # reglas de clasificación del orquestador
-│   └── rag_agent_system.txt      # instrucciones compartidas por los agentes
+│   ├── rag_agent_system.txt      # instrucciones compartidas por los agentes
+│   └── evaluator_system.txt      # rúbrica del agente evaluador
 ├── src/
 │   ├── config.py             # configuración central y validación de claves
-│   ├── schemas.py            # contratos Pydantic (RoutingDecision, AgentResponse...)
+│   ├── schemas.py            # contratos Pydantic (RoutingDecision, Evaluation, AgentResponse...)
 │   ├── ingest.py             # pipeline de ingesta: .md -> chunks -> Chroma
 │   ├── vectorstore.py        # acceso único a las colecciones de Chroma
 │   ├── tracing.py            # cliente de Langfuse y CallbackHandler
@@ -81,7 +86,8 @@ multi-agent-support/
 │       ├── rag_agent.py      # clase RAGAgent genérica (retrieval + generación)
 │       ├── hr_agent.py       # instancia de RAGAgent para RR. HH.
 │       ├── tech_agent.py     # instancia de RAGAgent para TI
-│       └── finance_agent.py  # instancia de RAGAgent para Finanzas
+│       ├── finance_agent.py  # instancia de RAGAgent para Finanzas
+│       └── evaluator.py      # agente evaluador (LLM-as-a-judge)
 ├── docs/
 │   └── langfuse_trace.png    # captura de un trace
 ├── multi_agent_system.ipynb  # notebook de demostración (6 secciones)
@@ -153,6 +159,8 @@ Respuesta: Sí, si compraste unos guantes por una emergencia y no había stock e
   - reembolsos_y_gastos.md > Comprobantes válidos (0.408)
 ```
 
+Cuando la consulta la responde un agente, la salida incluye además la línea `Evaluación` con los cuatro puntajes y la justificación del evaluador. Para desactivar la evaluación (por ejemplo, para ahorrar costo), se llama a `handle_query(..., run_evaluation=False)`.
+
 ### 3. Notebook de demostración
 
 Abrir `multi_agent_system.ipynb`, seleccionar el kernel del `.venv` y ejecutar **todas las celdas en orden** (Reiniciar → Ejecutar todo). Requiere haber corrido antes la ingesta. Secciones:
@@ -161,7 +169,7 @@ Abrir `multi_agent_system.ipynb`, seleccionar el kernel del `.venv` y ejecutar *
 2. Documentos y vector stores (verifica ≥ 50 chunks por dominio)
 3. Definición de agentes (cada agente probado por separado + fallo seguro)
 4. Orquestador y enrutamiento condicional
-5. Pruebas y ejemplos (las 17 consultas por el sistema completo)
+5. Pruebas y ejemplos (las 17 consultas por el sistema completo, precisión del ruteo y calidad según el evaluador)
 6. Integración con Langfuse
 
 ### 4. Evaluar solo el orquestador
@@ -189,14 +197,33 @@ Las 17 consultas de `test_queries.json` cubren los tres agentes y cinco categor�
 
 El resultado se repitió en ejecuciones independientes (clasificación determinista, ver decisiones técnicas).
 
+**Calidad de las respuestas (agente evaluador)**
+
+Se evaluaron las 15 respuestas generadas por los agentes (las 2 fuera de alcance no se evalúan):
+
+| Dimensión | Qué mide | Promedio |
+|---|---|---|
+| relevance | ¿Responde lo que se preguntó? | 9.5 / 10 |
+| completeness | ¿El colaborador sabe exactamente qué hacer después? | 8.3 / 10 |
+| accuracy | ¿Es concreta, coherente y sin afirmaciones dudosas? | 8.5 / 10 |
+| **quality** | Nota global | **8.7 / 10** |
+
+Las respuestas con menor nota coinciden con los puntos débiles ya conocidos del sistema:
+
+- **#16 "Quiero pedir vacaciones y además mi laptop no prende" — quality 5, completeness 4.** Es la consulta multi-intención: el sistema responde solo uno de los dos temas. El evaluador lo detectó sin saber de antemano que era un caso difícil.
+- **#7 "oye cuando me cae la grati de julio??" — quality 7.** Responde la fecha, pero no indica a qué canal acudir para confirmar el caso particular.
+- **#4 "La VPN se queda en 'Conectando...'" — quality 8.** Da pasos concretos, pero no detalla cómo abrir el ticket si el problema persiste.
+
 **Operación medida en Langfuse**
 
 | Métrica | Valor aproximado |
 |---|---|
-| Latencia por consulta | ~2.5–3 s (consulta respondida por un agente) |
-| Latencia fuera de alcance | ~1 s (no se llama a ningún agente) |
-| Costo por consulta | ~US$ 0.002 (≈ US$ 2 por cada 1.000 consultas) |
-| Tokens por consulta | ~2.000 |
+| Latencia por consulta (ruteo + agente) | ~2.5–3 s |
+| Tiempo adicional del evaluador | ~1.2–2 s |
+| Latencia fuera de alcance | ~1 s (no se llama a ningún agente ni al evaluador) |
+| Costo por consulta (ruteo + agente) | ~US$ 0.002 (≈ US$ 2 por cada 1.000 consultas) |
+| Costo adicional del evaluador | ~US$ 0.0009 por consulta |
+| Tokens por consulta (sin evaluador) | ~2.000 |
 
 ---
 
@@ -205,13 +232,17 @@ El resultado se repitió en ejecuciones independientes (clasificación determini
 Cada consulta genera un trace con esta estructura:
 
 ```
-support-request              (trace: consulta y respuesta final)
+support-request              (trace: consulta, respuesta final y scores)
 ├── orchestrator-routing     (span: intent, confidence, reasoning)
 │   └── ChatOpenAI           (generation: prompt, respuesta, tokens, costo)
-└── <intent>-agent           (agent: hr-agent / tech-agent / finance-agent)
-    ├── retrieval            (retriever: chunks recuperados con su score)
+├── <intent>-agent           (agent: hr-agent / tech-agent / finance-agent)
+│   ├── retrieval            (retriever: chunks recuperados con su score)
+│   └── ChatOpenAI           (generation)
+└── evaluator                (evaluator: puntajes y justificación)
     └── ChatOpenAI           (generation)
 ```
+
+El evaluador registra cuatro **scores** en el trace: `quality` (con la justificación como comentario), `relevance`, `completeness` y `accuracy`. En Langfuse se pueden filtrar los traces por score, por ejemplo para revisar solo las respuestas con `quality` menor a 7.
 
 ![Trace de una consulta en Langfuse](docs/langfuse_trace.png)
 
@@ -220,8 +251,9 @@ Con esta estructura se puede diagnosticar dónde falla una consulta:
 - **Clasificación errónea:** el output de `orchestrator-routing` muestra el intent elegido y su justificación.
 - **Retrieval deficiente:** el span `retrieval` muestra qué chunks se recuperaron y con qué score.
 - **Respuesta incorrecta con buen contexto:** la generation del agente muestra el prompt exacto que recibió el modelo.
+- **Respuesta pobre:** los scores del evaluador y su justificación indican qué le faltó a la respuesta.
 
-Cada trace lleva `user_id`, `session_id` y tags. Las consultas de prueba del notebook se etiquetan con `pruebas-v1` y `esperado-<intent>`, lo que permite filtrar una corrida completa y comparar versiones.
+Cada trace lleva `user_id`, `session_id` y tags. Las consultas de prueba del notebook se etiquetan con `pruebas-v2` y `esperado-<intent>`, lo que permite filtrar una corrida completa y comparar versiones.
 
 ---
 
@@ -253,6 +285,8 @@ Cada trace lleva `user_id`, `session_id` y tags. Las consultas de prueba del not
 
 **13. Configuración fail-fast.** `config.validate_config()` verifica al inicio que las claves existan y no tengan valores de ejemplo, en vez de fallar después con un error 401 poco claro. `LANGFUSE_HOST` (pedido por la consigna) se pasa explícitamente como `base_url`, el nombre vigente en Langfuse v4.
 
+**14. Agente evaluador (LLM-as-a-judge) con rúbrica calibrada.** Un segundo LLM califica cada respuesta con `with_structured_output(Evaluation)`, en tres dimensiones separadas más una nota global, porque una sola nota esconde *qué* falló. La rúbrica (`prompts/evaluator_system.txt`) define anclas concretas para cada nivel; por ejemplo, en completeness: 10 = indica la acción concreta y el canal, 6 = solo indica a qué área acudir, 3 = solo describe el tema. Sin esas anclas el evaluador era indulgente: una respuesta débil recibía completeness 8; con la rúbrica calibrada recibe 6, mientras una respuesta completa de control mantiene 10 en todas las dimensiones. La rúbrica también indica no penalizar una derivación honesta ("No encontré esa información...") y no usar conocimiento propio sobre las políticas.
+
 ---
 
 ## Limitaciones conocidas
@@ -262,11 +296,13 @@ Cada trace lleva `user_id`, `session_id` y tags. Las consultas de prueba del not
 - **Una sola intención por consulta.** Si una consulta mezcla dos temas, el sistema elige el más urgente y responde solo ese.
 - **Consultas que cruzan dominios.** Ejemplo: "La app de Andina360 no me deja marcar mi asistencia" se enruta bien a TI, pero el procedimiento completo (regularizar la asistencia con RR. HH.) está en los documentos de RR. HH., así que la respuesta queda incompleta. Un ruteo correcto no garantiza una respuesta completa.
 - **El LLM complementa con conocimiento propio.** Ante "¿Cuánto es el viático si viajo a Arequipa?", el modelo dedujo que Arequipa es capital de departamento, un dato que no está en los documentos (en este caso, correcto). El grounding reduce las alucinaciones, pero no las elimina.
+- **El evaluador no ve los documentos.** Juzga la respuesta frente a la consulta, no frente a la fuente, así que puede detectar respuestas vagas o incompletas, pero no un dato incorrecto que suene plausible. Medir la fidelidad a la fuente (faithfulness) requeriría pasarle también los chunks recuperados.
+- **El evaluador usa el mismo modelo que el sistema.** Un LLM tiende a calificar mejor los textos generados por su mismo modelo (sesgo de autopreferencia). Lo ideal es usar un modelo distinto o validar una muestra contra la revisión de una persona.
 - **Latencia de la primera consulta.** La primera llamada del proceso tarda más (~2.2 s solo en el orquestador frente a ~0.9 s en llamadas posteriores) por la apertura de la conexión con la API.
 
 ## Mejoras futuras
 
-- Agente evaluador que puntúe cada respuesta (1–10) con la Score API de Langfuse, para medir la calidad de las respuestas además del ruteo.
+- Pasarle al evaluador los chunks recuperados para medir también la fidelidad a la fuente, y validarlo contra una muestra revisada por personas.
 - Delegación a dos agentes en paralelo para consultas multi-intención o que cruzan dominios.
 - Búsqueda híbrida (BM25 + semántica) o reranking para mejorar el orden del retrieval.
 - Ampliar el dataset de prueba con consultas reales y correrlo automáticamente en cada cambio (CI).
