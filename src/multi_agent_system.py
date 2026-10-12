@@ -17,6 +17,7 @@ from src.agents.rag_agent import RAGAgent
 from src.agents.tech_agent import tech_agent
 from src.schemas import AgentResponse
 from src.tracing import get_langfuse
+from src.agents.evaluator import evaluate
 
 # Registro de agentes: intent -> agente que lo atiende.
 AGENTS: dict[str, RAGAgent] = {
@@ -37,6 +38,7 @@ def handle_query(
     user_id: str = "demo-user",
     session_id: str | None = None,
     tags: list[str] | None = None,
+    run_evaluation: bool = True,
 ) -> AgentResponse:
     """Clasifica la consulta, la delega al agente correspondiente y lo traza en Langfuse."""
     langfuse = get_langfuse()
@@ -70,6 +72,22 @@ def handle_query(
                     response = AGENTS[decision.intent].answer(query)
                     span.update(output={"answer": response.answer})
 
+        # Agente evaluador (bonus): puntúa la respuesta y registra los scores en el trace.
+        if run_evaluation and response.intent != config.OUT_OF_SCOPE:
+            with langfuse.start_as_current_observation(
+                name="evaluator",
+                as_type="evaluator",
+                input={"query": query, "answer": response.answer},
+            ) as span:
+                evaluation = evaluate(response)
+                span.update(output=evaluation.model_dump())
+
+            root.score_trace(name="quality", value=evaluation.score, comment=evaluation.reasoning)
+            root.score_trace(name="relevance", value=evaluation.relevance)
+            root.score_trace(name="completeness", value=evaluation.completeness)
+            root.score_trace(name="accuracy", value=evaluation.accuracy)
+            response.evaluation = evaluation
+
         root.update(output=response.model_dump())
 
     return response
@@ -83,4 +101,9 @@ if __name__ == "__main__":
     print(f"Respuesta: {response.answer}")
     for source in response.sources:
         print(f"  - {source.source} > {source.section} ({source.score})")
+    if response.evaluation:
+        e = response.evaluation
+        print(f"Evaluación: quality={e.score} relevance={e.relevance} "
+              f"completeness={e.completeness} accuracy={e.accuracy}")
+        print(f"  {e.reasoning}")    
     get_langfuse().flush()

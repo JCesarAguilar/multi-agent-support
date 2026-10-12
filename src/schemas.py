@@ -44,6 +44,15 @@ class Source(BaseModel):
     score: float | None = Field(default=None, description="Similitud con la consulta (0-1)")
 
 
+class Evaluation(BaseModel):
+    """Salida del agente evaluador (bonus): calidad de una respuesta."""
+
+    relevance: int = Field(ge=1, le=10, description="¿Responde a lo que se preguntó?")
+    completeness: int = Field(ge=1, le=10, description="¿Incluye todo lo necesario para actuar?")
+    accuracy: int = Field(ge=1, le=10, description="¿Es coherente, concreta y sin datos dudosos?")
+    score: int = Field(ge=1, le=10, description="Calidad global de 1 (pésima) a 10 (excelente).")
+    reasoning: str = Field(description="Justificación breve del puntaje (1-2 oraciones).")
+
 class AgentResponse(BaseModel):
     """Respuesta final del sistema para una consulta."""
 
@@ -51,10 +60,4 @@ class AgentResponse(BaseModel):
     intent: Intent
     answer: str
     sources: list[Source] = Field(default_factory=list)
-
-
-class Evaluation(BaseModel):
-    """Salida del agente evaluador (bonus): calidad de una respuesta."""
-
-    score: int = Field(ge=1, le=10, description="Calidad global de 1 (pésima) a 10 (excelente).")
-    reasoning: str = Field(description="Justificación breve del puntaje.")
+    evaluation: Evaluation | None = None
