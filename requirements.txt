@@ -10,4 +10,5 @@ pydantic==2.14.1
 tiktoken==0.14.0
 python-dotenv==1.2.4
 jupyter==1.1.1
+streamlit==1.26.0
 ipykernel==7.4.0
