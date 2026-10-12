@@ -12,6 +12,7 @@ from pydantic import SecretStr
 
 from src import config
 from src.schemas import RoutingDecision
+from src.tracing import get_langchain_handler
 
 
 def _format_domains() -> str:
@@ -42,7 +43,10 @@ def build_orchestrator():
 
 def classify(query: str) -> RoutingDecision:
     """Clasifica una consulta y devuelve un RoutingDecision validado por Pydantic."""
-    result = build_orchestrator().invoke({"query": query})
+    result = build_orchestrator().invoke(
+        {"query": query},
+        config={"callbacks": [get_langchain_handler()]},
+    )
     if not isinstance(result, RoutingDecision):
         raise TypeError(f"Salida inesperada del orquestador: {type(result).__name__}")
     return result

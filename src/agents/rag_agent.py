@@ -7,7 +7,6 @@ de esta clase con distinto dominio y rol. La lógica se escribe una sola vez.
 
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from src.schemas import AgentResponse, Intent, Source
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
@@ -15,6 +14,7 @@ from pydantic import SecretStr
 from src import config
 from src.schemas import AgentResponse, Intent, Source
 from src.vectorstore import get_vectorstore
+from src.tracing import get_langchain_handler, get_langfuse
 
 
 class RAGAgent:
@@ -52,8 +52,30 @@ class RAGAgent:
 
     def answer(self, query: str) -> AgentResponse:
         """Recupera contexto, genera la respuesta y la devuelve con sus fuentes."""
-        results = self.retrieve(query)
-        text = self.chain.invoke({"query": query, "context": self._format_context(results)})
+        langfuse = get_langfuse()
+
+        # Span del retrieval: permite ver qué chunks se recuperaron y con qué score.
+        with langfuse.start_as_current_observation(
+            name="retrieval",
+            as_type="retriever",
+            input={"query": query, "k": config.TOP_K, "domain": self.domain},
+        ) as span:
+            results = self.retrieve(query)
+            span.update(
+                output=[
+                    {
+                        "source": doc.metadata["source"],
+                        "section": doc.metadata["section"],
+                        "score": round(score, 3),
+                    }
+                    for doc, score in results
+                ]
+            )
+
+        text = self.chain.invoke(
+            {"query": query, "context": self._format_context(results)},
+            config={"callbacks": [get_langchain_handler()]},
+        )
 
         sources = [
             Source(
