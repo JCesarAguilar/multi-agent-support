@@ -1,0 +1,17 @@
+# Secretos: NUNCA subir a Git
+.env
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Vector stores locales (se regeneran con el pipeline de ingesta)
+chroma_db/
+
+# Sistema
+.DS_Store

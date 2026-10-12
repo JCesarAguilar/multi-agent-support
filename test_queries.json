@@ -1,0 +1,130 @@
+[
+  {
+    "id": 1,
+    "query": "¿Con cuánta anticipación debo pedir mis vacaciones?",
+    "expected_intent": "hr",
+    "category": "directa",
+    "expected_source": "vacaciones_y_licencias.md"
+  },
+  {
+    "id": 2,
+    "query": "¿Cuántos días de licencia por paternidad me corresponden?",
+    "expected_intent": "hr",
+    "category": "directa",
+    "expected_source": "vacaciones_y_licencias.md"
+  },
+  {
+    "id": 3,
+    "query": "Olvidé mi contraseña del correo, ¿cómo la recupero?",
+    "expected_intent": "tech",
+    "category": "directa",
+    "expected_source": "cuentas_contrasenas_y_accesos.md"
+  },
+  {
+    "id": 4,
+    "query": "La VPN se queda en 'Conectando...' y no avanza",
+    "expected_intent": "tech",
+    "category": "directa",
+    "expected_source": "vpn_y_conexion_remota.md"
+  },
+  {
+    "id": 5,
+    "query": "¿Cuál es el tope de movilidad sin comprobante?",
+    "expected_intent": "finance",
+    "category": "directa",
+    "expected_source": "reembolsos_y_gastos.md"
+  },
+  {
+    "id": 6,
+    "query": "¿Cuánto es el viático diario si viajo a la obra de Arequipa?",
+    "expected_intent": "finance",
+    "category": "directa",
+    "expected_source": "viaticos_y_viajes.md"
+  },
+  {
+    "id": 7,
+    "query": "oye cuando me cae la grati de julio??",
+    "expected_intent": "hr",
+    "category": "informal",
+    "expected_source": "nomina_y_pagos.md"
+  },
+  {
+    "id": 8,
+    "query": "no me agarra la huella en el reloj de la obra",
+    "expected_intent": "tech",
+    "category": "informal",
+    "expected_source": "tecnologia_en_obra.md"
+  },
+  {
+    "id": 9,
+    "query": "Compré unos guantes de seguridad con mi plata porque no había en almacén, ¿me lo devuelven?",
+    "expected_intent": "finance",
+    "category": "ambigua",
+    "expected_source": "reembolsos_y_gastos.md",
+    "note": "Parece HR (beneficios/EPP), pero el reembolso lo gestiona Finanzas"
+  },
+  {
+    "id": 10,
+    "query": "La app de Andina360 no me deja marcar mi asistencia",
+    "expected_intent": "tech",
+    "category": "ambigua",
+    "expected_source": "tecnologia_en_obra.md",
+    "note": "Andina360 es de RR. HH., pero si la app falla es un problema técnico"
+  },
+  {
+    "id": 11,
+    "query": "En Andina360 mi saldo de vacaciones aparece con menos días de los que tengo",
+    "expected_intent": "hr",
+    "category": "ambigua",
+    "expected_source": "vacaciones_y_licencias.md",
+    "note": "Contraparte de la 10: la app funciona pero el dato es de RR. HH."
+  },
+  {
+    "id": 12,
+    "query": "Me depositaron menos de lo normal este mes, ¿a quién reclamo?",
+    "expected_intent": "hr",
+    "category": "ambigua",
+    "expected_source": "nomina_y_pagos.md",
+    "note": "Suena a Finanzas (dinero), pero el sueldo y la boleta son de RR. HH."
+  },
+  {
+    "id": 13,
+    "query": "Es mi primer día y todavía no tengo correo corporativo",
+    "expected_intent": "tech",
+    "category": "ambigua",
+    "expected_source": "cuentas_contrasenas_y_accesos.md",
+    "note": "Suena a onboarding (RR. HH.), pero la cuenta la crea TI"
+  },
+  {
+    "id": 14,
+    "query": "¿Cómo calculo el volumen de concreto para una losa de 5 x 4 metros?",
+    "expected_intent": "out_of_scope",
+    "category": "fuera_de_alcance",
+    "expected_source": null,
+    "note": "Consulta de ingeniería; ningún agente debe responderla"
+  },
+  {
+    "id": 15,
+    "query": "¿Qué día es hoy y cómo va a estar el clima mañana?",
+    "expected_intent": "out_of_scope",
+    "category": "fuera_de_alcance",
+    "expected_source": null,
+    "note": "Nada que ver con la empresa"
+  },
+  {
+    "id": 16,
+    "query": "Quiero pedir vacaciones y además mi laptop no prende",
+    "expected_intent": "tech",
+    "category": "multi_intencion",
+    "expected_source": "equipos_y_software.md",
+    "note": "Dos intenciones. El sistema clasifica una sola: se espera la más urgente (laptop no prende = no puede trabajar). Limitación conocida a documentar"
+  },
+  {
+    "id": 17,
+    "query": "¿Puedo pagarle el jornal de un peón con la caja chica de la obra?",
+    "expected_intent": "finance",
+    "category": "ambigua",
+    "expected_source": "caja_chica_de_obra.md",
+    "note": "Menciona pago a personal (suena a RR. HH.), pero la regla está en la política de caja chica de Finanzas"
+  }
+]
