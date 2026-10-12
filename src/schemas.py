@@ -6,15 +6,24 @@ Si el LLM devuelve algo fuera del contrato, Pydantic lanza un error claro
 en vez de dejar pasar un valor inválido.
 """
 
-from typing import Literal
+from typing import Literal, TypeAlias, get_args
 
 from pydantic import BaseModel, Field
 
 from src import config
 
-# Intents válidos, generados desde config.DOMAINS: agregar un dominio en config
-# lo agrega automáticamente aquí. Equivale a Literal["hr", "tech", "finance", "out_of_scope"].
-Intent = Literal[tuple([*config.DOMAINS, config.OUT_OF_SCOPE])]
+# Intents válidos. Se escriben explícitos para que el verificador de tipos
+# (Pylance/mypy) pueda analizarlos sin ejecutar el código.
+Intent: TypeAlias = Literal["hr", "tech", "finance", "out_of_scope"]
+
+# Verificación al importar: si alguien agrega un dominio en config.DOMAINS
+# y olvida agregarlo aquí (o al revés), el programa falla de inmediato.
+_expected = {*config.DOMAINS, config.OUT_OF_SCOPE}
+if set(get_args(Intent)) != _expected:
+    raise RuntimeError(
+        f"Intent {set(get_args(Intent))} no coincide con config.DOMAINS {_expected}. "
+        "Actualiza el Literal en schemas.py."
+    )
 
 
 class RoutingDecision(BaseModel):

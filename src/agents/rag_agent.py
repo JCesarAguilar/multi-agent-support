@@ -7,18 +7,19 @@ de esta clase con distinto dominio y rol. La lógica se escribe una sola vez.
 
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
+from src.schemas import AgentResponse, Intent, Source
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from src import config
-from src.schemas import AgentResponse, Source
+from src.schemas import AgentResponse, Intent, Source
 from src.vectorstore import get_vectorstore
 
 
 class RAGAgent:
-    def __init__(self, domain: str, role: str) -> None:
-        self.domain = domain
+    def __init__(self, domain: Intent, role: str) -> None:
+        self.domain: Intent = domain
         self.vectorstore = get_vectorstore(domain)
 
         system_prompt = (config.PROMPTS_DIR / "rag_agent_system.txt").read_text(encoding="utf-8")
