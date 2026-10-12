@@ -4,10 +4,26 @@ from typing import Literal
 
 import streamlit as st
 
-from src.multi_agent_system import handle_query
+from src import config
+from src.ingest import build_index, load_domain_chunks
 from src.schemas import AgentResponse
+from src.vectorstore import get_vectorstore
 
 st.set_page_config(page_title="Soporte interno · Andina Obras", page_icon="🏗️")
+
+
+@st.cache_resource(show_spinner="Preparando la base de conocimiento (solo la primera vez)...")
+def preparar_indices() -> None:
+    """Construye el índice de cada dominio si todavía no existe (por ejemplo, en el servidor)."""
+    for domain in config.DOMAINS:
+        if not get_vectorstore(domain).get(limit=1)["ids"]:
+            build_index(domain, load_domain_chunks(domain))
+
+
+preparar_indices()
+
+# Se importa DESPUÉS de preparar los índices: al importarse, los agentes se conectan a Chroma.
+from src.multi_agent_system import handle_query  # noqa: E402
 
 # Colores que acepta st.badge y que usamos en la app
 BadgeColor = Literal["blue", "violet", "green", "gray"]
