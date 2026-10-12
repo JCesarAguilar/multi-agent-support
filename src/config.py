@@ -38,6 +38,19 @@ DOMAINS: dict[str, Path] = {
     "finance": DATA_DIR / "finance_docs",
 }
 
+# Qué cubre cada dominio. El orquestador usa estas descripciones para clasificar.
+DOMAIN_DESCRIPTIONS: dict[str, str] = {
+    "hr": "Recursos Humanos: vacaciones, licencias, descansos médicos, sueldo, boleta de pago, "
+          "gratificaciones, CTS, horas extra, beneficios, EPS, seguros, horarios, asistencia, "
+          "trabajo remoto, ingreso de personal, evaluación de desempeño, conducta y renuncias.",
+    "tech": "Mesa de Ayuda de TI: problemas técnicos con laptops, celulares, tablets, correo, Teams, "
+            "VPN, contraseñas, cuentas y accesos, impresoras, software, internet en obra, reloj "
+            "biométrico y fallas de aplicaciones (Andina360, ObraDigital, ERP).",
+    "finance": "Finanzas: reembolsos de gastos, movilidad, viáticos y viajes, caja chica de obra, "
+               "proveedores, órdenes de compra, pagos, facturación a clientes, valorizaciones y "
+               "control de costos de proyectos.",
+}
+
 # Intent para consultas que ningún agente debe responder.
 OUT_OF_SCOPE = "out_of_scope"
 

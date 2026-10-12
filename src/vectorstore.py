@@ -8,12 +8,13 @@ lados usan SIEMPRE el mismo modelo de embeddings y la misma métrica.
 
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
+from pydantic import SecretStr
 
 from src import config
 
 
 def get_embeddings() -> OpenAIEmbeddings:
-    return OpenAIEmbeddings(model=config.EMBEDDING_MODEL, api_key=config.OPENAI_API_KEY)
+    return OpenAIEmbeddings(model=config.EMBEDDING_MODEL, api_key=SecretStr(config.OPENAI_API_KEY))
 
 
 def get_vectorstore(domain: str) -> Chroma:
