@@ -67,7 +67,9 @@ def handle_query(
             else:
                 # Span del agente especialista: el nombre indica a quién se enrutó.
                 with langfuse.start_as_current_observation(
-                    name=f"{decision.intent}-agent", as_type="agent", input={"query": query}
+                    name=f"{decision.intent}-agent",
+                    as_type="agent",
+                    input={"query": query},
                 ) as span:
                     response = AGENTS[decision.intent].answer(query)
                     span.update(output={"answer": response.answer})
@@ -82,7 +84,9 @@ def handle_query(
                 evaluation = evaluate(response)
                 span.update(output=evaluation.model_dump())
 
-            root.score_trace(name="quality", value=evaluation.score, comment=evaluation.reasoning)
+            root.score_trace(
+                name="quality", value=evaluation.score, comment=evaluation.reasoning
+            )
             root.score_trace(name="relevance", value=evaluation.relevance)
             root.score_trace(name="completeness", value=evaluation.completeness)
             root.score_trace(name="accuracy", value=evaluation.accuracy)
@@ -103,7 +107,9 @@ if __name__ == "__main__":
         print(f"  - {source.source} > {source.section} ({source.score})")
     if response.evaluation:
         e = response.evaluation
-        print(f"Evaluación: quality={e.score} relevance={e.relevance} "
-              f"completeness={e.completeness} accuracy={e.accuracy}")
-        print(f"  {e.reasoning}")    
+        print(
+            f"Evaluación: quality={e.score} relevance={e.relevance} "
+            f"completeness={e.completeness} accuracy={e.accuracy}"
+        )
+        print(f"  {e.reasoning}")
     get_langfuse().flush()

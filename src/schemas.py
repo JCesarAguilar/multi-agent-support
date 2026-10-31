@@ -33,7 +33,9 @@ class RoutingDecision(BaseModel):
     confidence: float = Field(
         ge=0.0, le=1.0, description="Confianza en la clasificación, entre 0 y 1."
     )
-    reasoning: str = Field(description="Justificación breve (una oración) de la elección.")
+    reasoning: str = Field(
+        description="Justificación breve (una oración) de la elección."
+    )
 
 
 class Source(BaseModel):
@@ -41,17 +43,28 @@ class Source(BaseModel):
 
     source: str = Field(description="Archivo de origen, ej. reembolsos_y_gastos.md")
     section: str = Field(description="Sección del documento")
-    score: float | None = Field(default=None, description="Similitud con la consulta (0-1)")
+    score: float | None = Field(
+        default=None, description="Similitud con la consulta (0-1)"
+    )
 
 
 class Evaluation(BaseModel):
     """Salida del agente evaluador (bonus): calidad de una respuesta."""
 
     relevance: int = Field(ge=1, le=10, description="¿Responde a lo que se preguntó?")
-    completeness: int = Field(ge=1, le=10, description="¿Incluye todo lo necesario para actuar?")
-    accuracy: int = Field(ge=1, le=10, description="¿Es coherente, concreta y sin datos dudosos?")
-    score: int = Field(ge=1, le=10, description="Calidad global de 1 (pésima) a 10 (excelente).")
-    reasoning: str = Field(description="Justificación breve del puntaje (1-2 oraciones).")
+    completeness: int = Field(
+        ge=1, le=10, description="¿Incluye todo lo necesario para actuar?"
+    )
+    accuracy: int = Field(
+        ge=1, le=10, description="¿Es coherente, concreta y sin datos dudosos?"
+    )
+    score: int = Field(
+        ge=1, le=10, description="Calidad global de 1 (pésima) a 10 (excelente)."
+    )
+    reasoning: str = Field(
+        description="Justificación breve del puntaje (1-2 oraciones)."
+    )
+
 
 class AgentResponse(BaseModel):
     """Respuesta final del sistema para una consulta."""

@@ -10,7 +10,10 @@ import argparse
 from pathlib import Path
 
 from langchain_core.documents import Document
-from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from src import config
 
@@ -75,7 +78,9 @@ def load_domain_chunks(domain: str) -> list[Document]:
 
 def build_index(domain: str, chunks: list[Document]) -> None:
     """Reconstruye desde cero la colección del dominio (idempotente)."""
-    from src.vectorstore import get_vectorstore  # import aquí: --dry-run no necesita OpenAI
+    from src.vectorstore import (
+        get_vectorstore,
+    )  # import aquí: --dry-run no necesita OpenAI
 
     store = get_vectorstore(domain)
     store.reset_collection()  # borra lo anterior para no mezclar versiones
@@ -98,7 +103,9 @@ def main() -> None:
             f"caracteres min={min(sizes)} prom={sum(sizes) // len(sizes)} max={max(sizes)}"
         )
         if len(chunks) < 50:
-            print(f"  ATENCIÓN: {domain} tiene menos de 50 chunks (requisito de la consigna)")
+            print(
+                f"  ATENCIÓN: {domain} tiene menos de 50 chunks (requisito de la consigna)"
+            )
 
         if not args.dry_run:
             build_index(domain, chunks)

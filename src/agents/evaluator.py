@@ -16,12 +16,17 @@ from src.tracing import get_langchain_handler
 @lru_cache(maxsize=1)
 def build_evaluator():
     """Construye la cadena LCEL: prompt -> LLM con salida estructurada (Evaluation)."""
-    system_prompt = (config.PROMPTS_DIR / "evaluator_system.txt").read_text(encoding="utf-8")
+    system_prompt = (config.PROMPTS_DIR / "evaluator_system.txt").read_text(
+        encoding="utf-8"
+    )
 
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
-            ("human", "Consulta del colaborador:\n{query}\n\nRespuesta del asistente:\n{answer}"),
+            (
+                "human",
+                "Consulta del colaborador:\n{query}\n\nRespuesta del asistente:\n{answer}",
+            ),
         ]
     )
 

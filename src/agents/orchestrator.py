@@ -18,14 +18,18 @@ from src.tracing import get_langchain_handler
 def _format_domains() -> str:
     """Convierte DOMAIN_DESCRIPTIONS en una lista para el prompt."""
     lines = [f'- "{name}": {desc}' for name, desc in config.DOMAIN_DESCRIPTIONS.items()]
-    lines.append(f'- "{config.OUT_OF_SCOPE}": la consulta no corresponde a ninguna área.')
+    lines.append(
+        f'- "{config.OUT_OF_SCOPE}": la consulta no corresponde a ninguna área.'
+    )
     return "\n".join(lines)
 
 
 @lru_cache(maxsize=1)
 def build_orchestrator():
     """Construye la cadena LCEL: prompt -> LLM con salida estructurada."""
-    system_prompt = (config.PROMPTS_DIR / "orchestrator_system.txt").read_text(encoding="utf-8")
+    system_prompt = (config.PROMPTS_DIR / "orchestrator_system.txt").read_text(
+        encoding="utf-8"
+    )
 
     prompt = ChatPromptTemplate.from_messages(
         [("system", system_prompt), ("human", "{query}")]

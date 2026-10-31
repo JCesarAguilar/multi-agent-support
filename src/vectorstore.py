@@ -14,13 +14,17 @@ from src import config
 
 
 def get_embeddings() -> OpenAIEmbeddings:
-    return OpenAIEmbeddings(model=config.EMBEDDING_MODEL, api_key=SecretStr(config.OPENAI_API_KEY))
+    return OpenAIEmbeddings(
+        model=config.EMBEDDING_MODEL, api_key=SecretStr(config.OPENAI_API_KEY)
+    )
 
 
 def get_vectorstore(domain: str) -> Chroma:
     """Devuelve la colección de Chroma de un dominio (la crea si no existe)."""
     if domain not in config.DOMAINS:
-        raise ValueError(f"Dominio desconocido: {domain!r}. Válidos: {list(config.DOMAINS)}")
+        raise ValueError(
+            f"Dominio desconocido: {domain!r}. Válidos: {list(config.DOMAINS)}"
+        )
 
     return Chroma(
         collection_name=f"{domain}_docs",

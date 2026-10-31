@@ -20,7 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATA_DIR = PROJECT_ROOT / "data"
 PROMPTS_DIR = PROJECT_ROOT / "prompts"
-CHROMA_DIR = PROJECT_ROOT / "chroma_db"          # vector store persistido (en .gitignore)
+CHROMA_DIR = PROJECT_ROOT / "chroma_db"  # vector store persistido (en .gitignore)
 TEST_QUERIES_PATH = PROJECT_ROOT / "test_queries.json"
 
 # Cargar el .env de la raíz del proyecto, sin importar desde dónde se ejecute
@@ -41,14 +41,14 @@ DOMAINS: dict[str, Path] = {
 # Qué cubre cada dominio. El orquestador usa estas descripciones para clasificar.
 DOMAIN_DESCRIPTIONS: dict[str, str] = {
     "hr": "Recursos Humanos: vacaciones, licencias, descansos médicos, sueldo, boleta de pago, "
-          "gratificaciones, CTS, horas extra, beneficios, EPS, seguros, horarios, asistencia, "
-          "trabajo remoto, ingreso de personal, evaluación de desempeño, conducta y renuncias.",
+    "gratificaciones, CTS, horas extra, beneficios, EPS, seguros, horarios, asistencia, "
+    "trabajo remoto, ingreso de personal, evaluación de desempeño, conducta y renuncias.",
     "tech": "Mesa de Ayuda de TI: problemas técnicos con laptops, celulares, tablets, correo, Teams, "
-            "VPN, contraseñas, cuentas y accesos, impresoras, software, internet en obra, reloj "
-            "biométrico y fallas de aplicaciones (Andina360, ObraDigital, ERP).",
+    "VPN, contraseñas, cuentas y accesos, impresoras, software, internet en obra, reloj "
+    "biométrico y fallas de aplicaciones (Andina360, ObraDigital, ERP).",
     "finance": "Finanzas: reembolsos de gastos, movilidad, viáticos y viajes, caja chica de obra, "
-               "proveedores, órdenes de compra, pagos, facturación a clientes, valorizaciones y "
-               "control de costos de proyectos.",
+    "proveedores, órdenes de compra, pagos, facturación a clientes, valorizaciones y "
+    "control de costos de proyectos.",
 }
 
 # Intent para consultas que ningún agente debe responder.
@@ -104,7 +104,9 @@ def validate_config(require_langfuse: bool = True) -> None:
         required["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
         required["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
 
-    missing = [name for name, value in required.items() if value.strip() in _PLACEHOLDERS]
+    missing = [
+        name for name, value in required.items() if value.strip() in _PLACEHOLDERS
+    ]
     if missing:
         raise EnvironmentError(
             "Faltan variables de entorno o tienen valores de ejemplo: "
@@ -114,4 +116,6 @@ def validate_config(require_langfuse: bool = True) -> None:
 
     missing_dirs = [str(path) for path in DOMAINS.values() if not path.is_dir()]
     if missing_dirs:
-        raise FileNotFoundError(f"No existen las carpetas de documentos: {missing_dirs}")
+        raise FileNotFoundError(
+            f"No existen las carpetas de documentos: {missing_dirs}"
+        )

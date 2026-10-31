@@ -22,7 +22,9 @@ class RAGAgent:
         self.domain: Intent = domain
         self.vectorstore = get_vectorstore(domain)
 
-        system_prompt = (config.PROMPTS_DIR / "rag_agent_system.txt").read_text(encoding="utf-8")
+        system_prompt = (config.PROMPTS_DIR / "rag_agent_system.txt").read_text(
+            encoding="utf-8"
+        )
         prompt = ChatPromptTemplate.from_messages(
             [("system", system_prompt), ("human", "{query}")]
         ).partial(role=role)
@@ -39,7 +41,9 @@ class RAGAgent:
 
     def retrieve(self, query: str) -> list[tuple[Document, float]]:
         """Busca los TOP_K chunks más parecidos en la colección de este dominio."""
-        return self.vectorstore.similarity_search_with_relevance_scores(query, k=config.TOP_K)
+        return self.vectorstore.similarity_search_with_relevance_scores(
+            query, k=config.TOP_K
+        )
 
     @staticmethod
     def _format_context(results: list[tuple[Document, float]]) -> str:
@@ -85,4 +89,6 @@ class RAGAgent:
             )
             for doc, score in results
         ]
-        return AgentResponse(query=query, intent=self.domain, answer=text, sources=sources)
+        return AgentResponse(
+            query=query, intent=self.domain, answer=text, sources=sources
+        )

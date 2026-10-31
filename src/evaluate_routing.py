@@ -21,12 +21,16 @@ def main() -> None:
         ok = decision.intent == case["expected_intent"]
         results.append((case, decision, ok))
         mark = "OK  " if ok else "FALLO"
-        print(f"[{mark}] #{case['id']:>2} esperado={case['expected_intent']:<12} "
-              f"obtenido={decision.intent:<12} conf={decision.confidence:.2f} | {case['query']}")
+        print(
+            f"[{mark}] #{case['id']:>2} esperado={case['expected_intent']:<12} "
+            f"obtenido={decision.intent:<12} conf={decision.confidence:.2f} | {case['query']}"
+        )
 
     # Precisión global
     correct = sum(ok for _, _, ok in results)
-    print(f"\nRouting accuracy: {correct}/{len(results)} = {correct / len(results):.0%}")
+    print(
+        f"\nRouting accuracy: {correct}/{len(results)} = {correct / len(results):.0%}"
+    )
 
     # Precisión por categoría
     by_category = defaultdict(lambda: [0, 0])  # categoría -> [aciertos, total]
